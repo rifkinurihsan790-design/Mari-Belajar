@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal Belajar & Diskusi Terintegrasi (Edisi Lengkap)</title>
+    <style>
+        :root {
+            --primary: #128C7E;
+            --primary-dark: #075E54;
+            --accent: #34b7f1;
+            --bg-wa: #ece5dd;
+            --chat-user: #d9fdd3;
+            --chat-peer: #ffffff;
+            --card-bg: #ffffff;
+            --text-main: #333333;
+            --success: #27ae60;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #f0f2f5; color: var(--text-main); display: flex; flex-direction: column; min-height: 100vh; }
+        
+        header {
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+            color: white; padding: 20px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        .main-layout {
+            display: flex; max-width: 1300px; width: 100%; margin: 20px auto; gap: 20px; padding: 0 15px; flex-grow: 1;
+        }
+
+        /* Sisi Kiri: Materi Belajar & Halaman Kuis */
+        .content-section {
+            flex: 1.8; background: var(--card-bg); padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            position: relative;
+        }
+
+        /* Sisi Kanan: Ruang Diskusi mirip WhatsApp */
+        .discussion-section {
+            flex: 1.2; background: var(--bg-wa); border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            display: flex; flex-direction: column; max-height: 85vh; border: 1px solid #ddd; overflow: hidden;
+        }
+
+        .wa-header {
+            background-color: var(--primary-dark); color: white; padding: 12px 15px; display: flex; align-items: center; gap: 10px;
+        }
+        .wa-avatar { width: 38px; height: 38px; background-color: #cbd5e0; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: var(--primary-dark); }
+        .wa-status { font-size: 0.8rem; color: #dfdfdf; }
+
+        .step-content, .quiz-page { display: none; animation: fadeIn 0.4s ease-in-out forwards; }
+        .step-content.active, .quiz-page.active { display: block; }
+
+        h2 { color: var(--primary-dark); margin-bottom: 15px; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px;}
+        p { line-height: 1.7; margin-bottom: 15px; }
+        
+        .highlight-box { background-color: #ebf8ff; border-left: 5px solid var(--accent); padding: 15px; border-radius: 4px; margin: 15px 0; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        th, td { border: 1px solid #dee2e6; padding: 12px; text-align: left; }
+        th { background-color: #f8f9fa; }
+
+        .nav-actions { display: flex; justify-content: space-between; margin-top: 30px; padding-top: 20px; border-top: 1px solid #ecf0f1; }
+        .btn { padding: 12px 22px; border: none; border-radius: 6px; font-size: 1rem; cursor: pointer; font-weight: 600; transition: 0.2s; }
+        .btn-continue { background-color: var(--primary); color: white; }
+        .btn-continue:hover { background-color: var(--primary-dark); }
+        .btn-back { background-color: #cbd5e0; color: #4a5568; }
+
+        /* Kuis Gaya Pilihan */
+        .options-list { display: flex; flex-direction: column; gap: 10px; margin-top: 15px; }
+        .option-button { background: #fff; border: 1px solid #cbd5e0; padding: 12px; border-radius: 6px; text-align: left; cursor: pointer; font-size: 0.95rem; }
+        .option-button:hover:not([disabled]) { background-color: #f7fafc; }
+        .option-button.correct { background-color: #c6f6d5 !important; border-color: #38a169 !important; font-weight: bold; }
+        .option-button.wrong { background-color: #fed7d7 !important; border-color: #e53e3e !important; }
+        .discussion-box { margin-top: 12px; padding: 12px; background-color: #ebf8ff; border-left: 4px solid #3182ce; border-radius: 4px; font-size: 0.9rem; }
+
+        /* Ruang Obrolan WhatsApp */
+        .chat-history { flex-grow: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
+        .chat-bubble { max-width: 75%; padding: 8px 12px; border-radius: 8px; font-size: 0.9rem; position: relative; box-shadow: 0 1px 1px rgba(0,0,0,0.1); line-height: 1.4; }
+        .chat-bubble.user { background-color: var(--chat-user); align-self: flex-end; border-top-right-radius: 0; }
+        .chat-bubble.peer { background-color: var(--chat-peer); align-self: flex-start; border-top-left-radius: 0; }
+        .sender-name { font-weight: bold; font-size: 0.75rem; color: #e056fd; margin-bottom: 2px; }
+        .chat-time { font-size: 0.65rem; color: #7f8c8d; text-align: right; margin-top: 4px; }
+        .chat-input-area { background-color: #f0f0f0; padding: 10px 15px; display: flex; gap: 10px; align-items: center; }
+        .chat-input-area input { flex-grow: 1; padding: 10px 15px; border: none; border-radius: 20px; outline: none; font-size: 0.95rem; }
+
+        /* Jendela Pop-up Kejutan DUARRR */
+        .popup-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: flex; justify-content: center; align-items: center; z-index: 1000; display: none; }
+        .popup-card { background: white; padding: 35px; border-radius: 15px; text-align: center; max-width: 500px; width: 90%; box-shadow: 0 10px 30px rgba(0,0,0,0.3); animation: popScale 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        .popup-card h2 { color: #e67e22; border: none; font-size: 2rem; margin-bottom: 10px; }
+        .package-menu { display: flex; flex-direction: column; gap: 12px; margin-top: 25px; }
+        .btn-pkg { background: linear-gradient(135deg, #3498db, #2980b9); color: white; border: none; padding: 14px; border-radius: 8px; font-size: 1rem; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .btn-pkg:hover { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.15); }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes popScale { from { transform: scale(0.7); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Modul 1: Portal Evaluasi Hasil Belajar</h1>
+        <p>Aplikasi Pembelajaran Mandiri & WhatsApp Diskusi Grup Nyata</p>
+    </header>
+
+    <div class="main-layout">
+        
+        <main class="content-section" id="left-panel">
+            
+            <div id="step-1" class="step-content active">
+                <h2>Bagian 1: Pengantar Kompetensi Pendidik</h2>
+                <p>Selamat datang di modul interaktif! Sebagai calon atau pendidik profesional, menguasai tata cara evaluasi hasil belajar bukan sekadar pelengkap tugas mengajar formal, melainkan pilar utama pengukur kompetensi pedagogik profesional Anda.</p>
+                <div class="highlight-box">
+                    💡 <strong>Poin Penting:</strong> Evaluasi yang tidak akurat akan berakibat langsung pada keputusan instruksional yang salah dan tidak adil bagi peserta didik.
+                </div>
+                <p>Klik tombol <strong>Continue</strong> di bawah untuk membuka sub-bab berikutnya.</p>
+            </div>
+
+            <div id="step-2" class="step-content">
+                <h2>Bagian 2: Membedakan Empat Istilah Inti</h2>
+                <p>Pendidik sering mencampuradukkan istilah ini. Berikut struktur hierarkinya:</p>
+                <table>
+                    <thead>
+                        <tr><th>Istilah</th><th>Fungsi Operasional</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><strong>Tes</strong></td><td>Alat/instrumen penugasan atau lembar soal terstruktur.</td></tr>
+                        <tr><td><strong>Pengukuran</strong></td><td>Proses kuantifikasi yang menghasilkan skor/angka mentah.</td></tr>
+                        <tr><td><strong>Penilaian</strong></td><td>Mengumpulkan, menganalisis, dan memaknai rekam jejak siswa.</td></tr>
+                        <tr><td><strong>Evaluasi</strong></td><td>Value judgment untuk penentuan keputusan hukum (Lulus/Gagal).</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="step-3" class="step-content">
+                <h2>Bagian 3: Pembelajaran sebagai Suatu Sistem</h2>
+                <p>Program pembelajaran bekerja sebagai sebuah kesatuan sistemik yang saling mengikat. Unsurnya meliputi:</p>
+                <ul>
+                    <li><strong>Input:</strong> Bakat bawaan, motivasi, dan kesiapan awal peserta didik.</li>
+                    <li><strong>Process:</strong> Metode mengajar, sarana prasarana kurikulum, dan performa guru.</li>
+                    <li><strong>Output:</strong> Hasil akhir berupa pencapaian standar kompetensi lulusan.</li>
+                    <li><strong>Evaluasi:</strong> Komponen pengendali kontrol mutu pembelajaran (*Quality Control*).</li>
+                </ul>
+            </div>
+
+            <div id="step-4" class="step-content">
+                <h2>Bagian 4: Sifat & Prinsip Kerja Evaluasi</h2>
+                <p>Untuk melahirkan keputusan yang akurat dan adil, evaluasi harus berpijak pada prinsip:</p>
+                <p><strong>1. Sistematis:</strong> Berjalan matang berdasarkan kisi-kisi RPP, bukan ujian dadakan.</p>
+                <p><strong>2. Komprehensif:</strong> Wajib mengukur domain Kognitif (Otak), Afektif (Sikap), dan Psikomotor (Keterampilan).</p>
+                <p><strong>3. Kontinu:</strong> Berjalan konstan sepanjang semester untuk memantau grafik tumbuh kembang siswa.</p>
+                <div class="highlight-box">
+                    🎉 <strong>Selamat!</strong> Anda telah membaca seluruh rangkaian ringkasan materi penting. Silakan klik tombol di bawah untuk melihat pilihan menu latihan.
+                </div>
+            </div>
+
+            <div id="quiz-page" class="quiz-page">
+                <h2 id="quiz-title">Paket Soal</h2>
+                <p id="quiz-question-text"></p>
+                <div class="options-list" id="quiz-options-space"></div>
+                <button class="btn btn-back" style="margin-top: 20px;" onclick="returnToMenu()">Kembali ke Menu Soal</button>
+            </div>
+
+            <div class="nav-actions" id="materi-nav">
+                <button id="btn-back" class="btn btn-back" onclick="changeStep(-1)" disabled>Kembali</button>
+                <button id="btn-next" class="btn btn-continue" onclick="changeStep(1)">Continue</button>
+            </div>
+        </main>
+
+        <aside class="discussion-section">
+            <div class="wa-header">
+                <div class="wa-avatar">UT</div>
+                <div>
+                    <div style="font-weight: bold; font-size: 0.95rem;">Grup Diskusi TPEN4408</div>
+                    <div class="wa-status">online (semua mahasiswa terhubung)</div>
+                </div>
+            </div>
+            
+            <div class="chat-history" id="chat-container">
+                </div>
+
+            <div class="chat-input-area">
+                <input type="text" id="wa-input" placeholder="Ketik pesan diskusi..." onkeypress="checkEnter(event)">
+                <button class="btn btn-continue" style="padding: 8px 18px; border-radius: 20px;" onclick="sendWaMessage()">Kirim</button>
+            </div>
+        </aside>
+    </div>
+
+    <div class="popup-overlay" id="surprise-popup">
+        <div class="popup-card">
+            <h2>💥 DUARRR!!! 💥</h2>
+            <p style="font-weight: bold; font-size: 1.1rem; color: #2c3e50;">Selamat! Anda Telah Selesai Membaca Modul 1!</p>
+            <p style="color: #7f8c8d; font-size: 0.9rem;">Gunakan kesempatan ini untuk langsung menguji kedalaman analisis Anda. Silakan pilih paket soal di bawah ini:</p>
+            
+            <div class="package-menu">
+                <button class="btn-pkg" onclick="startQuizPack(1)">🎯 Buka Paket Soal 1 (Dasar Konsep)</button>
+                <button class="btn-pkg" onclick="startQuizPack(2)">⚡ Buka Paket Soal 2 (Ranah & Evaluasi)</button>
+                <button class="btn-pkg" onclick="startQuizPack(3)">🧠 Buka Paket Soal 3 (Analisis Tinggi / HOTS)</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ================= GLOBAL DATA & DATA KUIS =================
+        let currentStep = 1;
+        const totalSteps = 4;
+        
+        const allPackets = {
+            1: {
+                title: "Paket Soal 1: Konsep Dasar Evaluasi",
+                q: "Seorang guru memberikan selembar kertas yang berisi 20 pertanyaan pilihan ganda dan 5 pertanyaan esai kepada siswa untuk dikerjakan. Dalam konteks evaluasi hasil belajar, instrumen atau kumpulan tugas tersebut dinamakan...",
+                opts: ["Evaluasi", "Penilaian", "Pengukuran", "Tes"],
+                ans: 3,
+                disc: "Tes merupakan alat, media, atau instrumen formal terstruktur yang sengaja disusun untuk memancing munculnya respons kemampuan siswa."
+            },
+            2: {
+                title: "Paket Soal 2: Domain & Fungsi Evaluasi",
+                q: "Pendidik melakukan pengukuran menggunakan instrumen uji lapangan guna memetakan performa motorik kasar anak dalam melakukan lompat jauh. Ranah hasil belajar yang diukur adalah...",
+                opts: ["Ranah Kognitif", "Ranah Afektif", "Ranah Psikomotor", "Ranah Evaluatif"],
+                ans: 2,
+                disc: "Segala bentuk aktivitas belajar yang menitikberatkan pada koordinasi otot, gerak fisik, otot tubuh, dan kinestetik tergolong domain Psikomotor."
+            },
+            3: {
+                title: "Paket Soal 3: Tingkat Analisis Tinggi (HOTS)",
+                q: "Kurikulum baru menetapkan siswa wajib menginternalisasi nilai karakter gotong royong (Ranah Afektif). Namun guru hanya mengujinya lewat instrumen objektif pilihan ganda di lembar UAS berisi definisi teori gotong royong. Mengapa langkah ini dinilai cacat secara metodologi?",
+                opts: [
+                    "Sebab soal pilihan ganda membuka peluang siswa menebak jawaban secara beruntung.",
+                    "Terjadi kesalahan pemilihan alat ukur (tes tertulis) yang tidak memiliki kesesuaian operasional untuk merekam indikator perilaku nyata dari ranah sikap.",
+                    "Sebab evaluasi tersebut membebani memori hafalan jangka pendek siswa.",
+                    "Sebab guru meninggalkan pengukuran domain psikomotorik kasar siswa."
+                ],
+                ans: 1,
+                disc: "Ranah afektif berfokus pada sikap dan internalisasi nilai tindakan nyata. Mengujinya dengan tes tertulis (pilihan ganda) adalah kesalahan metodologi karena tes tertulis hanya valid mengukur aspek kognitif (pengetahuan/teori)."
+            }
+        };
+
+        // ================= ALUR WHATSAPP DATA STORAGE =================
+        const defaultChats = [
+            { name: "Siti Aminah (UT)", text: "Rekan-rekan, berarti kesimpulannya kita dilarang membuat vonis evaluasi (Lulus/Gagal) kalau data kuantitatif pengukurannya belum lengkap ya?", time: "21:40", type: "peer" },
+            { name: "Budi Santoso (UT)", text: "Benar, kalau langsung vonis tanpa data ukur yang jelas, nanti jatuh-nya jadi tebak-tebakan subjektif guru. Melanggar asas adil.", time: "21:43", type: "peer" }
+        ];
+
+        function loadChatHistory() {
+            let localData = localStorage.getItem("wa_discussion_data");
+            let chats = localData ? JSON.parse(localData) : defaultChats;
+            
+            const container = document.getElementById("chat-container");
+            container.innerHTML = "";
+            
+            chats.forEach(c => {
+                const bubble = document.createElement("div");
+                bubble.className = `chat-bubble ${c.type}`;
+                
+                let inner = "";
+                if(c.type === "peer") inner += `<div class="sender-name">${c.name}</div>`;
+                inner += `<div>${c.text}</div><div class="chat-time">${c.time}</div>`;
+                
+                bubble.innerHTML = inner;
+                container.appendChild(bubble);
+            });
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function sendWaMessage() {
+            const input = document.getElementById("wa-input");
+            const txt = input.value.trim();
+            if(!txt) return;
+
+            let localData = localStorage.getItem("wa_discussion_data");
+            let chats = localData ? JSON.parse(localData) : [...defaultChats];
+
+            let now = new Date();
+            let timeStr = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
+
+            chats.push({ name: "Anda", text: txt, time: timeStr, type: "user" });
+            localStorage.setItem("wa_discussion_data", JSON.stringify(chats));
+            
+            input.value = "";
+            loadChatHistory();
+
+            // Simulasi respon dari mahasiswa lain di jaringan setelah 1.5 detik
+            setTimeout(() => {
+                let currentChats = JSON.parse(localStorage.getItem("wa_discussion_data"));
+                currentChats.push({
+                    name: "Iwan Setiawan (UT)",
+                    text: "Sepakat! Itulah mengapa komponen evaluasi dalam sistem dianggap sebagai pengontrol mutu pembelajaran.",
+                    time: timeStr,
+                    type: "peer"
+                });
+                localStorage.setItem("wa_discussion_data", JSON.stringify(currentChats));
+                loadChatHistory();
+            }, 1500);
+        }
+
+        function checkEnter(e) { if(e.key === 'Enter') sendWaMessage(); }
+
+        // ================= ALUR MATERI & POPUP NAVIGASI =================
+        function changeStep(dir) {
+            document.getElementById(`step-${currentStep}`).classList.remove('active');
+            currentStep += dir;
+            document.getElementById(`step-${currentStep}`).classList.add('active');
+
+            document.getElementById('btn-back').disabled = (currentStep === 1);
+            
+            if(currentStep === totalSteps) {
+                document.getElementById('btn-next').innerText = "Selesai Membaca";
+                document.getElementById('btn-next').className = "btn btn-continue";
+                document.getElementById('btn-next').onclick = () => {
+                    document.getElementById("surprise-popup").style.display = "flex";
+                };
+            } else {
+                document.getElementById('btn-next').innerText = "Continue";
+                document.getElementById('btn-next').onclick = () => changeStep(1);
+            }
+        }
+
+        // ================= ALUR HALAMAN KUIS INTEGRASI =================
+        function startQuizPack(packId) {
+            // Sembunyikan Pop-up dan Sembunyikan seluruh materi
+            document.getElementById("surprise-popup").style.display = "none";
+            document.querySelectorAll(".step-content").forEach(el => el.classList.remove("active"));
+            document.getElementById("materi-nav").style.display = "none";
+
+            // Ambil data paket kuis
+            const target = allPackets[packId];
+            document.getElementById("quiz-title").innerText = target.title;
+            document.getElementById("quiz-question-text").innerText = target.q;
+            
+            const optionsSpace = document.getElementById("quiz-options-space");
+            optionsSpace.innerHTML = "";
+
+            target.opts.forEach((opt, idx) => {
+                const btn = document.createElement("button");
+                btn.className = "option-button";
+                btn.innerText = String.fromCharCode(65 + idx) + ". " + opt;
+                btn.onclick = () => {
+                    const allBtns = optionsSpace.querySelectorAll(".option-button");
+                    allBtns.forEach(b => b.disabled = true);
+
+                    if(idx === target.ans) {
+                        btn.classList.add("correct");
+                    } else {
+                        btn.classList.add("wrong");
+                        allBtns[target.ans].classList.add("correct");
+                    }
+
+                    const discBox = document.createElement("div");
+                    discBox.className = "discussion-box";
+                    discBox.innerHTML = `<strong>Analisis Jawaban Benar:</strong> ${target.disc}`;
+                    optionsSpace.appendChild(discBox);
+                };
+                optionsSpace.appendChild(btn);
+            });
+
+            document.getElementById("quiz-page").classList.add("active");
+        }
+
+        function returnToMenu() {
+            document.getElementById("quiz-page").classList.remove("active");
+            document.getElementById("surprise-popup").style.display = "flex";
+        }
+
+        // Jalankan sinkronisasi history WA chat saat web dimuat pertama kali
+        loadChatHistory();
+    </script>
+</body>
+</html>
